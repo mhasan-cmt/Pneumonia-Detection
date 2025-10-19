@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Chest X-ray Pneumonia Predictor</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 720px; margin: 2rem auto; padding: 1rem; }
+      .card { border: 1px solid #ddd; padding: 1rem; border-radius: 8px; }
+      img { max-width: 100%; height: auto; display:block; margin-bottom: 1rem; }
+      .result { margin-top: 1rem; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <h1>Chest X-ray Pneumonia Predictor</h1>
+    <div class="card">
+      <p>Upload a chest X-ray image (PNG / JPG). The app will send it to the model and return prediction.</p>
+      <form id="upload-form" enctype="multipart/form-data">
+        <input type="file" id="file-input" name="file" accept="image/*" required/>
+        <br/><br/>
+        <button type="submit">Predict</button>
+      </form>
+      <div id="preview"></div>
+      <div id="result" class="result"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById("upload-form");
+      const fileInput = document.getElementById("file-input");
+      const preview = document.getElementById("preview");
+      const resultDiv = document.getElementById("result");
+
+      fileInput.addEventListener("change", () => {
+        preview.innerHTML = "";
+        const f = fileInput.files[0];
+        if (!f) return;
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(f);
+        preview.appendChild(img);
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        resultDiv.textContent = "Predicting...";
+        const fd = new FormData();
+        fd.append("file", fileInput.files[0]);
+        try {
+          const resp = await fetch("/predict", { method: "POST", body: fd });
+          const data = await resp.json();
+          if (!resp.ok) {
+            resultDiv.textContent = "Error: " + (data.error || resp.statusText);
+            return;
+          }
+          const r = data.result;
+          resultDiv.textContent = `Label: ${r.label} — Probability: ${r.probability.toFixed(4)}`;
+        } catch (err) {
+          resultDiv.textContent = "Request failed: " + err;
+        }
+      });
+    </script>
+  </body>
+</html>
